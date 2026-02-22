@@ -14,7 +14,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# System libs needed by Doctr / OpenCV / pdf2image
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     libglib2.0-0 \
@@ -22,45 +21,44 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Install PyTorch CPU-only first (keeps image small — no CUDA)
+# PyTorch CPU-only (pas de CUDA = image beaucoup plus légère)
 RUN pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
-# Install Doctr with torch backend
+# Doctr avec backend torch
 RUN pip install "python-doctr[torch]"
 
-# Pré-téléchargement des modèles via script (évite le parse error Dockerfile)
+# Pré-téléchargement des modèles via script
 COPY download_models.py /tmp/download_models.py
 RUN python3 /tmp/download_models.py
 
 # ─── Stage 3 : final runtime ──────────────────────────────────────────────────
-FROM node:20-bookworm-slim AS runtime
+# Base Python : évite les problèmes de libpython3.11.so manquante
+FROM python:3.11-slim-bookworm AS runtime
 
 ENV DEBIAN_FRONTEND=noninteractive \
     NODE_ENV=production \
-    # Tell Python where to find pre-downloaded Doctr models
     DOCTR_CACHE_DIR=/home/appuser/.cache/doctr \
-    # Silence TF/Torch verbose logs
     TF_CPP_MIN_LOG_LEVEL=3 \
     PYTHONUNBUFFERED=1
 
-# Runtime system libs (same as python-deps stage)
+# System libs + Node.js 20 via nodesource
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    python3-distutils \
     libgl1 \
     libglib2.0-0 \
     libgomp1 \
     poppler-utils \
     ca-certificates \
+    curl \
     wget \
+    gnupg \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Copy Python packages from python-deps
-COPY --from=python-deps /usr/local/lib/python3.11 /usr/local/lib/python3.11
-COPY --from=python-deps /usr/local/bin/python3.11 /usr/local/bin/python3.11
-RUN ln -sf /usr/local/bin/python3.11 /usr/local/bin/python3
+# Packages Python (torch + doctr) depuis python-deps
+COPY --from=python-deps /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 
-# Copy pre-downloaded Doctr models
+# Modèles Doctr pré-téléchargés
 COPY --from=python-deps /root/.cache/doctr /home/appuser/.cache/doctr
 
 # App user
