@@ -1,0 +1,21 @@
+{
+  "name": "ocr-service-p-eye",
+  "version": "1.2.0",
+  "type": "module",
+  "private": true,
+  "description": "OCR microservice — PDF → searchable PDF + text + MRZ verification (PassportEye)",
+  "author": "",
+  "license": "ISC",
+  "main": "server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}
