@@ -28,11 +28,9 @@ RUN pip install torch torchvision --index-url https://download.pytorch.org/whl/c
 # Install Doctr with torch backend
 RUN pip install "python-doctr[torch]"
 
-# Pre-download models into the image (avoids cold-start download at runtime)
-# db_resnet50 (detection) + crnn_vgg16_bn (recognition)
-RUN python3 -c "\
-    from doctr.models import ocr_predictor; \
-    ocr_predictor(det_arch='db_resnet50', reco_arch='crnn_vgg16_bn', pretrained=True)"
+# Pré-téléchargement des modèles via script (évite le parse error Dockerfile)
+COPY download_models.py /tmp/download_models.py
+RUN python3 /tmp/download_models.py
 
 # ─── Stage 3 : final runtime ──────────────────────────────────────────────────
 FROM node:20-bookworm-slim AS runtime
