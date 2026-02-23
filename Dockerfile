@@ -24,8 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 RUN pip install "python-doctr[torch]"
 
-COPY download_models.py /tmp/download_models.py
-RUN python3 /tmp/download_models.py
+
 
 # ─── Stage 3 : runtime ────────────────────────────────────────────────────────
 FROM python:3.11-slim-bookworm AS runtime
