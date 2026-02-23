@@ -24,7 +24,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 RUN pip install "python-doctr[torch]"
 
-
+COPY download_models.py /tmp/download_models.py
+RUN python3 /tmp/download_models.py
 
 # ─── Stage 3 : runtime ────────────────────────────────────────────────────────
 FROM python:3.11-slim-bookworm AS runtime
@@ -50,6 +51,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY --from=python-deps /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=python-deps /root/.cache/doctr /home/appuser/.cache/doctr
+
 
 RUN groupadd --gid 1001 appgroup && \
     useradd --uid 1001 --gid appgroup --shell /bin/sh --create-home appuser \
